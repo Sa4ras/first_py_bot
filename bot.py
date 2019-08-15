@@ -8,6 +8,7 @@ import soundfile as sf
 from gtts import gTTS
 import os
 
+
 bot = telebot.TeleBot(config.token)
 
 def buttons_start(message):
@@ -30,24 +31,40 @@ def random_meme_function(message):
     bot.send_photo(message.chat.id, url)
 
 def text_to_voice(message):
-    language = 'en'
+    language = 'ru'
     myobj = gTTS(text=message.text, lang=language, slow = False)
-    myobj.save("user.mp3")
-    audio = open('user.mp3', 'rb')
-    bot.send_audio(message.chat.id, audio)
+    file = str(message.chat.id) + '.ogg'
+    myobj.save(file)
+    audio = open(file, 'rb')
+    bot.send_voice(message.chat.id, audio)
     audio.close()
-    os.remove("user.mp3")
+    os.remove(file)
 
 def voice_to_text_function(user_voice):
-    with open("usaudio.wav", "wb") as file:
-        file.write(user_voice.voice)
-    '''r = sr.Recognizer()
-    with user_voice as source:
-        audio = r.listen(user_voice)
-    sound = user_voice.voice
-    #try:
-    text = r.recognize_google(sound)
-    bot.send_message(user_voice.chat.id, text)
+    bot.send_message(user_voice.chat.id, type(user_voice.voice))
+    '''
+    audio = open("file.ogg", "wb")
+    audio.write(user_voice.voice.get_file)
+    audio.close()
+    data, samplerate = sf.read('file.ogg')
+    sf.write('file.wav', data, samplerate)
+    r = sr.Recognizer()
+    sound = "file.wav"
+    with sr.AudioFile(sound) as source:
+        sound = r.listen(source)
+        text = r.recognize_google(sound)
+        bot.send_message(user_voice.chat.id, text)
+    voice_file = open("voice.ogg",'wb')
+    voice_file.save("voice.ogg")
+    data, samplerate = sf.read('voice.ogg')
+    sf.write('voice.wav', data, samplerate)
+    r = sr.Recognizer()
+    sound = 'voice.wav'
+    with sr.AudioFile(sound) as source:
+        sound = r.listen(source)
+    #try:   
+        text = r.recognize_google(sound)
+        bot.send_message(user_voice.chat.id, text)
     #except:
      #   bot.send_message(user_voice.chat.id, "Sorry, I can't recognize anything(")
     '''
@@ -72,9 +89,8 @@ def button_reply(message):
         bot.send_message(message.chat.id, "Send me a voice message")
 
         @bot.message_handler(content_types=['voice'])
-        def audio_handler(message):
-            bot.send_message(message.chat.id, type(message.voice))
-            voice_to_text_function(message)
+        def push_voice_to_func(content):
+            voice_to_text_function(content)
 
     @bot.message_handler(regexp='Text to voice')
     def button_text_to_voice(message):
@@ -83,8 +99,6 @@ def button_reply(message):
         @bot.message_handler(content_types=['text'])
         def push_text_to_func(content):
             text_to_voice(content)
-
-
 
 
 if __name__ == '__main__':
